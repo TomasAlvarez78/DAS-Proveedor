@@ -1,17 +1,39 @@
--- =============================================
 -- Proveedor Stored Procedures
+
 -- =============================================
+-- 0. sp_get_producto - Return a products using codigoBarra
+-- Input: @codigoBarra
+-- Returns: Available product
+-- =============================================
+
+CREATE OR ALTER PROCEDURE sp_get_producto
+    @codigoBarra INT
+AS
+BEGIN
+    SELECT
+        id as codigoBarra,
+        nombre,
+        imagen,
+        stock,
+        precio
+    FROM Producto
+    WHERE id = @codigoBarra;
+END
+GO
 
 -- =============================================
 -- 1. sp_get_productos - Return all products with current prices
 -- Returns: All products available
 -- =============================================
+
 CREATE OR ALTER PROCEDURE sp_get_productos
 AS
 BEGIN
     SELECT
         id as codigoBarra,
         nombre,
+        imagen,
+        stock,
         precio
     FROM Producto
     ORDER BY nombre;
@@ -19,22 +41,23 @@ END
 GO
 
 -- =============================================
--- 2. sp_get_cliente_by_apikey - Get client by API key (for validation)
--- Input: @apiKey
--- Returns: Client ID and details if found
+-- 2. sp_get_cliente_by_identifier - Get client by client identifier (for authentication)
+-- Input: @clientIdentifier
+-- Returns: Client details including hashed API key for verification
 -- =============================================
-CREATE OR ALTER PROCEDURE sp_get_cliente_by_apikey
-    @apiKey NVARCHAR(MAX)
+CREATE OR ALTER PROCEDURE sp_get_cliente_by_identifier
+    @clientIdentifier NVARCHAR(50)
 AS
 BEGIN
     SELECT
         id,
+        clientIdentifier,
         nombre,
         descripcion,
         apiKey,
         servicio
     FROM Clientes
-    WHERE apiKey = @apiKey;
+    WHERE clientIdentifier = @clientIdentifier;
 END
 GO
 
@@ -43,19 +66,19 @@ GO
 -- Input: @idCliente, @productosJson (JSON array with codigoBarra and cantidad)
 -- Returns: Estimated date, total price, and availability for each product
 --
--- JSON Format:
+-- JSON:
 -- [{"codigoBarra": 1, "cantidad": 3}, {"codigoBarra": 2, "cantidad": 2}]
 -- =============================================
 CREATE OR ALTER PROCEDURE sp_estimar_pedido
-    @idCliente SMALLINT,
     @productosJson NVARCHAR(MAX)
 AS
 BEGIN
     DECLARE @index INT = 0;
     DECLARE @count INT;
-    DECLARE @codigoBarra SMALLINT;
+    DECLARE @codigoBarra INT;
     DECLARE @cantidad SMALLINT;
     DECLARE @precio FLOAT;
+    DECLARE @stock SMALLINT;
     DECLARE @precioEstimadoTotal FLOAT = 0;
     DECLARE @fechaEstimada DATETIME = DATEADD(day, 3, GETDATE());
     DECLARE @productosResultJson NVARCHAR(MAX) = '[]';
@@ -63,19 +86,12 @@ BEGIN
     -- Validate JSON
     IF ISJSON(@productosJson) = 0
     BEGIN
-        SELECT 'Error: Formato JSON inv�lido' as error;
+        SELECT 'Error: Formato JSON invalido' as error;
         RETURN;
     END
 
     -- Get count of products
     SET @count = (SELECT COUNT(*) FROM OPENJSON(@productosJson));
-
-    -- Validate client exists
-    IF NOT EXISTS (SELECT 1 FROM Clientes WHERE id = @idCliente)
-    BEGIN
-        SELECT 'Error: Cliente no encontrado' as error;
-        RETURN;
-    END
 
     -- Loop through each product
     SET @index = 0;
@@ -83,25 +99,38 @@ BEGIN
     BEGIN
         -- Extract product data from JSON, oh god
         SELECT
-            @codigoBarra = CAST(JSON_VALUE(@productosJson, CONCAT('$[', @index, '].codigoBarra')) AS SMALLINT),
+            @codigoBarra = CAST(JSON_VALUE(@productosJson, CONCAT('$[', @index, '].codigoBarra')) AS INT),
             @cantidad = CAST(JSON_VALUE(@productosJson, CONCAT('$[', @index, '].cantidad')) AS SMALLINT);
 
-        -- Get product price from database
-        SELECT @precio = precio FROM Producto WHERE id = @codigoBarra;
+        -- Get product price and stock from database
+        SELECT @precio = precio, @stock = stock FROM Producto WHERE id = @codigoBarra;
 
-        -- If product exists, calculate price and add availability status, im going crazy
-        IF @precio IS NOT NULL
+        DECLARE @available BIT;
+        DECLARE @nombre NVARCHAR(100);
+
+        -- Check availability: product exists AND has sufficient stock
+        IF @precio IS NOT NULL AND @stock >= @cantidad
         BEGIN
+            SET @available = 1;
             SET @precioEstimadoTotal = @precioEstimadoTotal + (@precio * @cantidad);
-
-            -- Build products result JSON by concatenating
-            IF @index = 0
-                SET @productosResultJson = CONCAT('[{"codigoBarra":', @codigoBarra, ',"nombre":"', (SELECT nombre FROM Producto WHERE id = @codigoBarra), '","available":1}');
-            ELSE
-                SET @productosResultJson = CONCAT(LEFT(@productosResultJson, LEN(@productosResultJson)-1), ',{"codigoBarra":', @codigoBarra, ',"nombre":"', (SELECT nombre FROM Producto WHERE id = @codigoBarra), '","available":1}]');
-
-            SET @precio = NULL;
+            SELECT @nombre = nombre FROM Producto WHERE id = @codigoBarra;
         END
+        ELSE
+        BEGIN
+            SET @available = 0;
+            -- Get product name if it exists, otherwise use default message
+            SET @nombre = ISNULL((SELECT nombre FROM Producto WHERE id = @codigoBarra), 'Producto no encontrado');
+        END
+
+        -- Build products result JSON by concatenating (always include the product)
+        IF @index = 0
+            SET @productosResultJson = CONCAT('[{"codigoBarra":', @codigoBarra, ',"nombre":"', @nombre, '","available":', CASE WHEN @available = 1 THEN 'true' ELSE 'false' END, '}]');
+        ELSE
+            SET @productosResultJson = CONCAT(LEFT(@productosResultJson, LEN(@productosResultJson)-1), ',{"codigoBarra":', @codigoBarra, ',"nombre":"', @nombre, '","available":', CASE WHEN @available = 1 THEN 'true' ELSE 'false' END, '}]');
+
+        -- Reset variables
+        SET @precio = NULL;
+        SET @stock = NULL;
 
         SET @index = @index + 1;
     END
@@ -122,13 +151,13 @@ GO
 -- Creates: Pedido record + PedidoProducto records for each product
 -- =============================================
 CREATE OR ALTER PROCEDURE sp_asignar_pedido
-    @idCliente SMALLINT,
+    @idCLiente SMALLINT,
     @productosJson NVARCHAR(MAX)
 AS
 BEGIN
     DECLARE @index INT = 0;
     DECLARE @count INT;
-    DECLARE @codigoBarra SMALLINT;
+    DECLARE @codigoBarra INT;
     DECLARE @cantidad SMALLINT;
     DECLARE @precio FLOAT;
     DECLARE @precioPedido FLOAT;
@@ -147,13 +176,6 @@ BEGIN
         RETURN;
     END
 
-    -- Validate client exists
-    IF NOT EXISTS (SELECT 1 FROM Clientes WHERE id = @idCliente)
-    BEGIN
-        SELECT 'Error: Cliente no encontrado' as mensaje, NULL as idPedido;
-        RETURN;
-    END
-
     -- Get count of products
     SET @count = (SELECT COUNT(*) FROM OPENJSON(@productosJson));
 
@@ -162,7 +184,7 @@ BEGIN
     WHILE @index < @count
     BEGIN
         SELECT
-            @codigoBarra = CAST(JSON_VALUE(@productosJson, CONCAT('$[', @index, '].codigoBarra')) AS SMALLINT),
+            @codigoBarra = CAST(JSON_VALUE(@productosJson, CONCAT('$[', @index, '].codigoBarra')) AS INT),
             @cantidad = CAST(JSON_VALUE(@productosJson, CONCAT('$[', @index, '].cantidad')) AS SMALLINT);
 
         -- Check if product exists and has sufficient stock
@@ -186,7 +208,7 @@ BEGIN
     WHILE @index < @count
     BEGIN
         SELECT
-            @codigoBarra = CAST(JSON_VALUE(@productosJson, CONCAT('$[', @index, '].codigoBarra')) AS SMALLINT),
+            @codigoBarra = CAST(JSON_VALUE(@productosJson, CONCAT('$[', @index, '].codigoBarra')) AS INT),
             @cantidad = CAST(JSON_VALUE(@productosJson, CONCAT('$[', @index, '].cantidad')) AS SMALLINT);
 
         -- Get product price
@@ -255,6 +277,7 @@ AS
 BEGIN
     DECLARE @estadoActual SMALLINT;
     DECLARE @estadoNoCancelables SMALLINT = 2;
+    DECLARE @estadoCancelado SMALLINT = 4;
 
     -- Get current order status
     SELECT @estadoActual = estado FROM Pedido WHERE id = @idPedido;
@@ -294,6 +317,43 @@ GO
 -- =============================================
 -- Helper Procedures
 -- =============================================
+
+-- =============================================
+-- sp_create_cliente - Create new client with hashed API key
+-- Input: @clientIdentifier, @nombre, @descripcion, @hashedApiKey, @servicio
+-- Returns: Created client details
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_create_cliente
+    @clientIdentifier NVARCHAR(50),
+    @nombre NVARCHAR(255),
+    @descripcion NVARCHAR(500),
+    @hashedApiKey NVARCHAR(60),
+    @servicio NVARCHAR(255)
+AS
+BEGIN
+    -- Check if client identifier already exists
+    IF EXISTS (SELECT 1 FROM Clientes WHERE clientIdentifier = @clientIdentifier)
+    BEGIN
+        SELECT NULL as id, NULL as clientIdentifier, NULL as nombre, NULL as descripcion, NULL as apiKey, NULL as servicio;
+        RETURN;
+    END
+
+    -- Insert new client
+    INSERT INTO Clientes (clientIdentifier, nombre, descripcion, apiKey, servicio)
+    VALUES (@clientIdentifier, @nombre, @descripcion, @hashedApiKey, @servicio);
+
+    -- Return the created client
+    SELECT
+        id,
+        clientIdentifier,
+        nombre,
+        descripcion,
+        apiKey,
+        servicio
+    FROM Clientes
+    WHERE clientIdentifier = @clientIdentifier;
+END
+GO
 
 -- sp_update_pedido_status - Update order status
 CREATE OR ALTER PROCEDURE sp_update_pedido_status

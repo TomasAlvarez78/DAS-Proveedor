@@ -1,6 +1,4 @@
--- =============================================
 -- Proveedor Database Schema
--- =============================================
 
 -- Drop tables
 IF OBJECT_ID('PedidoProducto', 'U') IS NOT NULL DROP TABLE PedidoProducto;
@@ -13,7 +11,6 @@ GO
 
 -- =============================================
 -- EstadoPedido Table
--- =============================================
 CREATE TABLE EstadoPedido (
     id SMALLINT IDENTITY(1,1) PRIMARY KEY,
     nombre NVARCHAR(255) NOT NULL,
@@ -22,18 +19,17 @@ CREATE TABLE EstadoPedido (
 
 -- =============================================
 -- Clientes Table
--- =============================================
 CREATE TABLE Clientes (
     id SMALLINT IDENTITY(1,1) PRIMARY KEY,
+    clientIdentifier NVARCHAR(50) NOT NULL UNIQUE,
     nombre NVARCHAR(255) NOT NULL,
     descripcion NVARCHAR(500) NOT NULL,
-    apiKey NVARCHAR(500) NOT NULL,
+    apiKey NVARCHAR(60) NOT NULL,
     servicio NVARCHAR(255) NOT NULL
 );
 
 -- =============================================
 -- Ponderacion Table
--- =============================================
 CREATE TABLE Ponderacion (
     id SMALLINT IDENTITY(1,1) PRIMARY KEY,
     puntuacion SMALLINT NOT NULL,
@@ -42,9 +38,8 @@ CREATE TABLE Ponderacion (
 
 -- =============================================
 -- Producto Table
--- =============================================
 CREATE TABLE Producto (
-    id SMALLINT IDENTITY(1,1) PRIMARY KEY,
+    id INT IDENTITY(1,1) PRIMARY KEY,
     nombre NVARCHAR(500) NOT NULL,
     imagen NVARCHAR(500) NOT NULL,
     stock SMALLINT NOT NULL,
@@ -53,7 +48,6 @@ CREATE TABLE Producto (
 
 -- =============================================
 -- Pedido Table
--- =============================================
 CREATE TABLE Pedido (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     estado SMALLINT NOT NULL,
@@ -68,34 +62,15 @@ CREATE TABLE Pedido (
 
 -- =============================================
 -- PedidoProducto Table
--- =============================================
 CREATE TABLE PedidoProducto (
     id SMALLINT IDENTITY(1,1) PRIMARY KEY,
-    codigoBarra SMALLINT NOT NULL,
+    codigoBarra INT NOT NULL,
     cantidad SMALLINT NOT NULL,
-    precioPedido BIGINT NOT NULL,
+    precioPedido FLOAT NOT NULL,
     idPedido BIGINT NOT NULL,
     CONSTRAINT FK_PedidoProducto_Producto FOREIGN KEY (codigoBarra) REFERENCES Producto(id),
     CONSTRAINT FK_PedidoProducto_Pedido FOREIGN KEY (idPedido) REFERENCES Pedido(id)
 );
-
--- =============================================
--- Insert Reference Data
--- =============================================
-
--- Insert order statuses
-INSERT INTO EstadoPedido (nombre, descripcion) VALUES ('Asignado', 'Pedido en espera de confirmacion');
-INSERT INTO EstadoPedido (nombre, descripcion) VALUES ('En Proceso', 'Pedido procesandose');
-INSERT INTO EstadoPedido (nombre, descripcion) VALUES ('En camino', 'Pedido en camino');
-INSERT INTO EstadoPedido (nombre, descripcion) VALUES ('Cancelado', 'Pedido cancelado');
-INSERT INTO EstadoPedido (nombre, descripcion) VALUES ('Finalizado', 'Pedido finalizado');
-
--- Insert rating scales
-INSERT INTO Ponderacion (puntuacion, descripcion) VALUES (1, 'Muy Insatisfecho');
-INSERT INTO Ponderacion (puntuacion, descripcion) VALUES (2, 'Insatisfecho');
-INSERT INTO Ponderacion (puntuacion, descripcion) VALUES (3, 'Neutral');
-INSERT INTO Ponderacion (puntuacion, descripcion) VALUES (4, 'Satisfecho');
-INSERT INTO Ponderacion (puntuacion, descripcion) VALUES (5, 'Muy Satisfecho');
 
 PRINT 'Database created';
 GO

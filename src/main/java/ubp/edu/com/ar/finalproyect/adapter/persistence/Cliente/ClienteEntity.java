@@ -1,17 +1,18 @@
-package ubp.edu.com.ar.finalproyect.adapter.persistence.entity;
+package ubp.edu.com.ar.finalproyect.adapter.persistence.Cliente;
 
-public class ClientesEntity {
+public class ClienteEntity {
     private int id;
+    private String clientIdentifier;
     private String nombre;
     private String descripcion;
     private String apiKey;
     private String servicio;
 
-    public ClientesEntity() {
-    }
+    public ClienteEntity() {}
 
-    public ClientesEntity(int id, String nombre, String descripcion, String apiKey, String servicio) {
+    public ClienteEntity(int id, String clientIdentifier, String nombre, String descripcion, String apiKey, String servicio) {
         this.id = id;
+        this.clientIdentifier = clientIdentifier;
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.apiKey = apiKey;
@@ -24,6 +25,14 @@ public class ClientesEntity {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getClientIdentifier() {
+        return clientIdentifier;
+    }
+
+    public void setClientIdentifier(String clientIdentifier) {
+        this.clientIdentifier = clientIdentifier;
     }
 
     public String getNombre() {
@@ -60,9 +69,11 @@ public class ClientesEntity {
 
     @Override
     public String toString() {
-        return "ClientesEntity{" +
+        return "ClienteEntity{" +
                 "id=" + id +
                 ", nombre='" + nombre + '\'' +
+                ", descripcion='" + descripcion + '\'' +
+                ", apiKey='" + apiKey + '\'' +
                 ", servicio='" + servicio + '\'' +
                 '}';
     }

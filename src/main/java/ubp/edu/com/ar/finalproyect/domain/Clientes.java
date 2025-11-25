@@ -2,6 +2,7 @@ package ubp.edu.com.ar.finalproyect.domain;
 
 public class Clientes {
     private int id;
+    private String clientIdentifier;
     private String nombre;
     private String descripcion;
     private String apiKey;
@@ -10,8 +11,9 @@ public class Clientes {
     public Clientes() {
     }
 
-    public Clientes(int id, String nombre, String descripcion, String apiKey, String servicio) {
+    public Clientes(int id, String clientIdentifier, String nombre, String descripcion, String apiKey, String servicio) {
         this.id = id;
+        this.clientIdentifier = clientIdentifier;
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.apiKey = apiKey;
@@ -24,6 +26,14 @@ public class Clientes {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getClientIdentifier() {
+        return clientIdentifier;
+    }
+
+    public void setClientIdentifier(String clientIdentifier) {
+        this.clientIdentifier = clientIdentifier;
     }
 
     public String getNombre() {

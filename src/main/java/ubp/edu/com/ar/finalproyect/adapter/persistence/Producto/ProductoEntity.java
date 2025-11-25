@@ -1,29 +1,42 @@
-package ubp.edu.com.ar.finalproyect.adapter.persistence.entity;
+package ubp.edu.com.ar.finalproyect.adapter.persistence.Producto;
 
 public class ProductoEntity {
-    private int id;
+    private int codigoBarra;
     private String nombre;
     private String imagen;
     private int stock;
     private float precio;
+    private boolean available;
 
     public ProductoEntity() {
     }
 
-    public ProductoEntity(int id, String nombre, String imagen, int stock, float precio) {
-        this.id = id;
+    public ProductoEntity(int codigoBarra, String nombre, float precio) {
+        this.codigoBarra = codigoBarra;
+        this.nombre = nombre;
+        this.precio = precio;
+    }
+
+    public ProductoEntity(int codigoBarra, String nombre, boolean available) {
+        this.codigoBarra = codigoBarra;
+        this.nombre = nombre;
+        this.available = available;
+    }
+
+    public ProductoEntity(int codigoBarra, String nombre, String imagen, int stock, float precio) {
+        this.codigoBarra = codigoBarra;
         this.nombre = nombre;
         this.imagen = imagen;
         this.stock = stock;
         this.precio = precio;
     }
 
-    public int getId() {
-        return id;
+    public int getCodigoBarra() {
+        return codigoBarra;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setCodigoBarra(int codigoBarra) {
+        this.codigoBarra = codigoBarra;
     }
 
     public String getNombre() {
@@ -61,10 +74,10 @@ public class ProductoEntity {
     @Override
     public String toString() {
         return "ProductoEntity{" +
-                "id=" + id +
-                ", nombre='" + nombre + '\'' +
-                ", stock=" + stock +
-                ", precio=" + precio +
+                "codigoBarra = " + codigoBarra +
+                ", nombre = '" + nombre + '\'' +
+                ", stock = " + stock +
+                ", precio = " + precio +
                 '}';
     }
 }

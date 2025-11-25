@@ -1,29 +1,43 @@
 package ubp.edu.com.ar.finalproyect.domain;
 
 public class Producto {
-    private int id;
+    private int codigoBarra;
     private String nombre;
-    private byte[] imagen;
+    private String imagen;
     private int stock;
     private float precio;
 
     public Producto() {
     }
 
-    public Producto(int id, String nombre, byte[] imagen, int stock, float precio) {
-        this.id = id;
+    public Producto(Producto producto) {
+        this.codigoBarra = producto.getCodigoBarra();
+        this.nombre = producto.getNombre();
+        this.imagen = producto.getImagen();
+        this.stock = producto.getStock();
+        this.precio = producto.getPrecio();
+    }
+
+    public Producto(int codigoBarra, String nombre, float precio) {
+        this.codigoBarra = codigoBarra;
+        this.nombre = nombre;
+        this.precio = precio;
+    }
+
+    public Producto(int codigoBarra, String nombre, String imagen, int stock, float precio) {
+        this.codigoBarra = codigoBarra;
         this.nombre = nombre;
         this.imagen = imagen;
         this.stock = stock;
         this.precio = precio;
     }
 
-    public int getId() {
-        return id;
+    public int getCodigoBarra() {
+        return codigoBarra;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setCodigoBarra(int codigoBarra) {
+        this.codigoBarra = codigoBarra;
     }
 
     public String getNombre() {
@@ -34,11 +48,11 @@ public class Producto {
         this.nombre = nombre;
     }
 
-    public byte[] getImagen() {
+    public String getImagen() {
         return imagen;
     }
 
-    public void setImagen(byte[] imagen) {
+    public void setImagen(String imagen) {
         this.imagen = imagen;
     }
 
@@ -61,10 +75,10 @@ public class Producto {
     @Override
     public String toString() {
         return "Producto{" +
-                "id=" + id +
-                ", nombre='" + nombre + '\'' +
-                ", stock=" + stock +
-                ", precio=" + precio +
+                "codigoBarra = " + codigoBarra +
+                ", nombre = '" + nombre + '\'' +
+                ", stock = " + stock +
+                ", precio = " + precio +
                 '}';
     }
 }
