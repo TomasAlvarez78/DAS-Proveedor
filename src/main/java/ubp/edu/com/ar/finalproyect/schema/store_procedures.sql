@@ -380,3 +380,60 @@ BEGIN
     SELECT 'Estado actualizado exitosamente' as mensaje;
 END
 GO
+
+-- =============================================
+-- 7. sp_puntuar_pedido - Rate an order
+-- Input: @idPedido, @puntuacion
+-- Returns: Success/error message
+--
+-- Rules: Can only rate if order status is >= 4 (Cancelado) or 5 (Finalizado)
+-- Puntuacion must be between 1 and 5
+-- =============================================
+CREATE OR ALTER PROCEDURE sp_puntuar_pedido
+    @idPedido BIGINT,
+    @puntuacion TINYINT
+AS
+BEGIN
+    DECLARE @estadoActual SMALLINT;
+    DECLARE @estadoMinimo SMALLINT = 4; -- Cancelado or higher
+
+    -- Check if order exists
+    SELECT @estadoActual = estado FROM Pedido WHERE id = @idPedido;
+
+    IF @estadoActual IS NULL
+    BEGIN
+        SELECT
+            @idPedido as idPedido,
+            'Pedido no encontrado' as descripcion;
+        RETURN;
+    END
+
+    -- Check if order can be rated (must be Cancelado or Finalizado)
+    IF @estadoActual < @estadoMinimo
+    BEGIN
+        SELECT
+            @idPedido as idPedido,
+            'Solo se pueden puntuar pedidos cancelados o finalizados' as descripcion;
+        RETURN;
+    END
+
+    -- Validate puntuacion range (1-5)
+    IF @puntuacion < 1 OR @puntuacion > 5
+    BEGIN
+        SELECT
+            @idPedido as idPedido,
+            'La puntuacion debe estar entre 1 y 5' as descripcion;
+        RETURN;
+    END
+
+    -- Update order rating
+    UPDATE Pedido
+    SET puntuacion = @puntuacion
+    WHERE id = @idPedido;
+
+    -- Return success
+    SELECT
+        @idPedido as idPedido,
+        'Puntuacion agendada' as descripcion;
+END
+GO

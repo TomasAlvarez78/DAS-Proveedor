@@ -72,4 +72,18 @@ public class PedidoService {
         }
         return pedidoRepository.updatePedidoStatus(idPedido, estadoId);
     }
+
+    /**
+     * Rate an order
+     * returns idOrder and description
+     */
+    public Map<String, Object> puntuarPedido(long idPedido, int puntuacion) {
+        if (idPedido <= 0) {
+            throw new IllegalArgumentException("Invalid order ID");
+        }
+        if (puntuacion < 1 || puntuacion > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5");
+        }
+        return pedidoRepository.puntuarPedido(idPedido, puntuacion);
+    }
 }

@@ -243,4 +243,42 @@ public class PedidoRepositoryImpl implements PedidoRepository {
         map.put("mensaje", entity.getMensaje());
         return map;
     }
+
+    @Override
+    public Map<String, Object> puntuarPedido(long idPedido, int puntuacion) {
+        try {
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("sp_puntuar_pedido")
+                    .declareParameters(
+                            new SqlParameter("idPedido", Types.BIGINT),
+                            new SqlParameter("puntuacion", Types.TINYINT)
+                    )
+                    .returningResultSet("resultSet", BeanPropertyRowMapper.newInstance(PuntuacionPedidoEntity.class));
+
+            SqlParameterSource in = new MapSqlParameterSource()
+                    .addValue("idPedido", idPedido)
+                    .addValue("puntuacion", puntuacion);
+
+            Map<String, Object> result = jdbcCall.execute(in);
+
+            @SuppressWarnings("unchecked")
+            List<PuntuacionPedidoEntity> resultSet = (List<PuntuacionPedidoEntity>) result.get("resultSet");
+
+            if (resultSet != null && !resultSet.isEmpty()) {
+                return toMapPuntuacion(resultSet.get(0));
+            }
+
+            return new HashMap<>();
+        } catch (Exception e) {
+            throw new RuntimeException("Error rating pedido", e);
+        }
+    }
+
+    // Helper: Entity → Map
+    private Map<String, Object> toMapPuntuacion(PuntuacionPedidoEntity entity) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("idPedido", String.valueOf(entity.getIdPedido()));
+        map.put("descripcion", entity.getDescripcion());
+        return map;
+    }
 }

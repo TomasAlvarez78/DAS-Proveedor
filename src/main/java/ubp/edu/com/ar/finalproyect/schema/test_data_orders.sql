@@ -16,5 +16,11 @@
 
 -- SELECT * FROM master.dbo.Clientes
 
--- SELECT * FROM master.dbo.Pedido
+SELECT * FROM master.dbo.Pedido
+
+-- SELECT * FROM master.dbo.Ponderacion
+
+-- SELECT * FROM master.dbo.EstadoPedido
+
+-- SELECT * FROM master.dbo.Clientes
 

@@ -44,4 +44,12 @@ public interface PedidoRepository {
      * @return Map with mensaje
      */
     Map<String, Object> updatePedidoStatus(long idPedido, int estadoId);
+
+    /**
+     * Rate an order
+     * @param idPedido Order ID
+     * @param puntuacion Rating (1-5)
+     * @return Map with idPedido and descripcion
+     */
+    Map<String, Object> puntuarPedido(long idPedido, int puntuacion);
 }

@@ -219,4 +219,35 @@ public class PedidoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+
+    /**
+     * Rate an order
+     * GET /api/proveedor/puntuarPedido?clientId={clientId}&apikey={apikey}&idPedido={idPedido}&puntuacion={puntuacion}
+     */
+    @GetMapping("/puntuarPedido")
+    public ResponseEntity<Map<String, Object>> puntuarPedido(
+            @RequestParam("clientId") String clientId,
+            @RequestParam("apikey") String apiKey,
+            @RequestParam("idPedido") Long idPedido,
+            @RequestParam("puntuacion") Integer puntuacion) {
+
+        try {
+            Clientes cliente = clienteService.authenticateClient(clientId, apiKey);
+
+            if (cliente == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("status", "KO");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+
+            Map<String, Object> puntuacionResult = pedidoService.puntuarPedido(idPedido, puntuacion);
+
+            return ResponseEntity.ok(puntuacionResult);
+
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
 }
