@@ -52,4 +52,10 @@ public interface PedidoRepository {
      * @return Map with idPedido and descripcion
      */
     Map<String, Object> puntuarPedido(long idPedido, int puntuacion);
+
+    /**
+     * Get all ponderaciones (rating scale definitions)
+     * @return List of ponderaciones with id, puntuacion, and descripcion
+     */
+    java.util.List<Map<String, Object>> getPonderaciones();
 }

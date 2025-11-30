@@ -3,6 +3,7 @@ package ubp.edu.com.ar.finalproyect.service;
 import org.springframework.stereotype.Service;
 import ubp.edu.com.ar.finalproyect.port.PedidoRepository;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -85,5 +86,13 @@ public class PedidoService {
             throw new IllegalArgumentException("Rating must be between 1 and 5");
         }
         return pedidoRepository.puntuarPedido(idPedido, puntuacion);
+    }
+
+    /**
+     * Get all ponderaciones (rating scale definitions)
+     * returns list of ponderaciones with id, puntuacion, and descripcion
+     */
+    public List<Map<String, Object>> getPonderaciones() {
+        return pedidoRepository.getPonderaciones();
     }
 }

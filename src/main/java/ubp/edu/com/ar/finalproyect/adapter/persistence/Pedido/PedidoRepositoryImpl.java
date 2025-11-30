@@ -16,6 +16,7 @@ import ubp.edu.com.ar.finalproyect.adapter.persistence.Producto.ProductoEntity;
 import ubp.edu.com.ar.finalproyect.port.PedidoRepository;
 
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -279,6 +280,43 @@ public class PedidoRepositoryImpl implements PedidoRepository {
         Map<String, Object> map = new HashMap<>();
         map.put("idPedido", String.valueOf(entity.getIdPedido()));
         map.put("descripcion", entity.getDescripcion());
+        return map;
+    }
+
+    @Override
+    public List<Map<String, Object>> getPonderaciones() {
+        try {
+            SimpleJdbcCall jdbcCall = new SimpleJdbcCall(jdbcTemplate)
+                    .withProcedureName("sp_get_ponderaciones")
+                    .returningResultSet("resultSet", BeanPropertyRowMapper.newInstance(PonderacionEntity.class));
+
+            Map<String, Object> result = jdbcCall.execute();
+
+            @SuppressWarnings("unchecked")
+            List<PonderacionEntity> resultSet = (List<PonderacionEntity>) result.get("resultSet");
+
+            if (resultSet != null && !resultSet.isEmpty()) {
+                List<Map<String, Object>> ponderaciones = new ArrayList<>();
+                for (PonderacionEntity entity : resultSet) {
+                    ponderaciones.add(toMapPonderacion(entity));
+                }
+                return ponderaciones;
+            }
+
+            return new ArrayList<>();
+        } catch (Exception e) {
+            throw new RuntimeException("Error getting ponderaciones", e);
+        }
+    }
+
+    // Helper: Entity → Map
+    private Map<String, Object> toMapPonderacion(PonderacionEntity entity) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", entity.getId());
+        map.put("puntuacion", entity.getPuntuacion());
+        if (entity.getDescripcion() != null) {
+            map.put("descripcion", entity.getDescripcion());
+        }
         return map;
     }
 }

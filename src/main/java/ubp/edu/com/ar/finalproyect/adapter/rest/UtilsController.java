@@ -5,8 +5,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ubp.edu.com.ar.finalproyect.domain.Clientes;
 import ubp.edu.com.ar.finalproyect.service.ClienteService;
+import ubp.edu.com.ar.finalproyect.service.PedidoService;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -14,9 +16,11 @@ import java.util.Map;
 public class UtilsController {
 
     private final ClienteService clienteService;
+    private final PedidoService pedidoService;
 
-    public UtilsController(ClienteService clienteService) {
+    public UtilsController(ClienteService clienteService, PedidoService pedidoService) {
         this.clienteService = clienteService;
+        this.pedidoService = pedidoService;
     }
 
     // Health check endpoint
@@ -42,6 +46,29 @@ public class UtilsController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("status", "KO");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * Get all ponderaciones (rating scale definitions)
+     * GET /api/ponderaciones?clientId={clientId}&apikey={apikey}
+     */
+    @GetMapping("/ponderaciones")
+    public ResponseEntity<List<Map<String, Object>>> getPonderaciones(
+            @RequestParam("clientId") String clientId,
+            @RequestParam("apikey") String apiKey) {
+        try {
+            Clientes cliente = clienteService.authenticateClient(clientId, apiKey);
+
+            if (cliente == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+            }
+
+            List<Map<String, Object>> ponderaciones = pedidoService.getPonderaciones();
+            return ResponseEntity.ok(ponderaciones);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 }
